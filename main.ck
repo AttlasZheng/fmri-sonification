@@ -1,25 +1,37 @@
-LiSa lisa => dac;
+53 => int N;
 
-"samples/3/a/high/breathy.wav" => lisa.read;
-53 => lisa.maxVoices;
+SndBuf bufs[N];
+ADSR envs[N];
+int playing[N];
 
-for (int i; i < lisa.maxVoices(); i++) {
-  (i, i) => lisa.pan;
+for (int i; i < N; i++) bufs[i] => envs[i] => (i => dac.chan);
+
+"/Users/tristanpeng/Desktop/soni-test/samples/3/a/high/breathy.wav" => read;
+
+fun void read(string name) {
+  for (int i; i < N; i++) name => bufs[i].read;
 }
 
-fun void grain(LiSa @ lisa, float rate, dur pos, dur len, dur up, dur down) {
-  lisa.getVoice() => int voice;
+fun void grain(float rate, int pos, dur len, dur up, dur down) {
+  -1 => int voice;
+  for (int i; i < N; i++) if (!playing[i]) { i => voice; break; }
 
   if (voice > -1) {
-    (voice, rate) => lisa.rate;
-    (voice, pos) => lisa.playPos;
-    (voice, up) => lisa.rampUp;
+    true => playing[voice];
+
+    rate => bufs[voice].rate;
+    pos => bufs[voice].pos;
+
+    (up, 0::ms, 1, down) => envs[voice].set;
+    envs[voice].keyOn();
 
     (len - up) => now;
 
-    (voice, down) => lisa.rampDown;
+    envs[voice].keyOff();
 
     down => now;
+
+    false => playing[voice];
   }
 }
 
@@ -40,7 +52,7 @@ while (true) {
   while (oin.recv(msg)) {
     if (msg.address != "/test") continue;
     for (int n; n < msg.numArgs(); n++) {
-      spork ~ grain(lisa, 1, ((n => msg.getFloat, 0, 1, 0, lisa.duration() / samp) => Math.map)::samp, 100::ms, 5::ms, 5::ms);
+      spork ~ grain(1, ((n => msg.getFloat, 0, 1, 0, bufs[0].samples()) => Math.map) $ int, 100::ms, 5::ms, 5::ms);
     }
   }
 }
