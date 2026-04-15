@@ -66,6 +66,6 @@ while (true) {
   }
 
   for (int i; i < N; i++) {
-    if (current[n][0]) spork ~ grain(current[n][1], current[n][2], current[n][3]::ms, current[n][4]::ms, current[n][5]::ms);
+    if (current[i][0]) spork ~ grain(current[i][1], current[i][2], current[i][3]::ms, current[i][4]::ms, current[i][5]::ms);
   }
 }
