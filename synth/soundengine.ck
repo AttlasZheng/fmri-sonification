@@ -217,16 +217,7 @@ fun void grainVoice(int index, int startSample)
 {
     SndBuf g => ADSR env => dac;
 
-    filename => g.read;
-
-    if (g.samples() <= 0)
-    {
-        <<< "ERROR: voice failed to load file for grain", index >>>;
-        return;
-    }
-
-    1.0 => g.rate;
-    0 => g.loop;
+    -1 => int lastSampleIndex;
 
     5::ms => dur decay;
     0.8 => float sustainLevel;
@@ -236,8 +227,21 @@ fun void grainVoice(int index, int startSample)
 
     while (true)
     {
+        if (sampleIndex != lastSampleIndex)
+        {
+            sampleFiles[sampleIndex] => g.read;
+            sampleIndex => lastSampleIndex;
+
+            if (g.samples() <= 0)
+            {
+                <<< "ERROR: failed to load sample", sampleIndex >>>;
+                100::ms => now;
+                continue;
+            }
+        }
+
         clamp01(grainVolumes[index]) => g.gain;
-        Math.random2(0, maxStartSample) => g.pos;
+        Math.random2(0, g.samples() - 1) => g.pos;
 
         grainAttack => dur attack;
 
@@ -258,7 +262,6 @@ fun void grainVoice(int index, int startSample)
         grainInterval => now;
     }
 }
-
 
 // =========================
 // start OSC listeners
