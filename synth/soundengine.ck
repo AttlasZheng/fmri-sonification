@@ -3,9 +3,6 @@
 //
 //------------------------------------------------------------
 
-// =========================
-// user settings
-// =========================
 
 [
     "audio 1/a/high/raspy a high.wav",
@@ -14,13 +11,13 @@
     "audio 1/a/mid/raspy a mid.wav",
     "audio 1/a/mid/breathy a mid.wav",
     "audio 1/a/mid/supported a mid.wav",
-    "audio 1/a/low/raspy a low.wav",
+    "audio 1/a/low/Raspy a low.wav",
     "audio 1/a/low/breathy a low.wav",
-    "audio 1/a/low/supported a low.wav"
+    "audio 1/a/low/Supported a low.wav"
 ] @=> string sampleFiles[];
 
-0 => int currentSampleIndex;
-sampleFiles[currentSampleIndex] => string filename;
+5 => int sampleIndex;
+sampleFiles[sampleIndex] => string filename;
 
 // OSC port
 8000 => int OSC_PORT;
@@ -29,7 +26,6 @@ sampleFiles[currentSampleIndex] => string filename;
 53 => int NUM_GRAINS;
 25::ms => dur grainDur;
 4.0::ms => dur grainAttack;
-0 => int sampleIndex;
 
 50::ms => dur grainInterval;
 
@@ -200,6 +196,8 @@ fun void sampleIndexListener()
             oe.getFloat() => float thisIndex;
 
             Math.floor(thisIndex * 9) $ int => sampleIndex;
+
+            sampleFiles[sampleIndex] => filename;
 
             <<< "Updated sample =", sampleIndex >>>;
         }
