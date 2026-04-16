@@ -87,7 +87,7 @@ class SequencerThread(QThread):
 
                 if abs(axis_value) < self.axis_deadzone:
                     axis_value = 0.0
-                self.row += (axis_value ** 3) * self.axis_scale
+                self.row += (-axis_value ** 3) * self.axis_scale
 
                 time.sleep(0.05)
 
