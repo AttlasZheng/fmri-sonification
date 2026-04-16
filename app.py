@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Sonification Controller")
+        self.setWindowTitle("Synth Engine Client")
         self.setFixedSize(QSize(1280, 720))
 
         self.file_path = None
