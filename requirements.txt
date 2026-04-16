@@ -1,0 +1,4 @@
+python-osc
+pygame
+numpy
+PyQt5
