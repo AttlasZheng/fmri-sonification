@@ -29,12 +29,8 @@ class SequencerThread(QThread):
         pygame.display.set_mode((1, 1))
         pygame.joystick.init()
         joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
-
-        joysticks = []
-        for x in range(pygame.joystick.get_count()):
-            js = pygame.joystick.Joystick(x)
-            js.init()
-            joysticks.append(js)
+        for joystick in joysticks:
+            joystick.init()
 
         try:
             if pygame.joystick.get_count() == 0:
@@ -87,7 +83,8 @@ class SequencerThread(QThread):
                     )
 
                 pygame.event.pump()
-                axis_value = joysticks[0].get_axis(1) # elevator joystick
+                axis_value = joysticks[0].get_axis(1) # elevator axis
+
                 if abs(axis_value) < self.axis_deadzone:
                     axis_value = 0.0
                 self.row += (axis_value ** 3) * self.axis_scale
