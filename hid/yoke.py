@@ -185,6 +185,198 @@ def main() -> None:
             js.quit()
         pygame.quit()
 
+# ── Visual Section ──────────────────────────────────────────────────────────
+# Add this BELOW your existing code. It does not replace the reader.
+
+import math
+
+
+def get_axis_value_by_label(joysticks, target_labels):
+    """
+    Search all joysticks for an axis whose label matches one of target_labels.
+    Returns the first matching axis value, else 0.0.
+    """
+    target_labels = [t.lower() for t in target_labels]
+
+    for js in joysticks:
+        kind = classify(js.get_name())
+        for a in range(js.get_numaxes()):
+            lbl = axis_label(kind, a).lower()
+            if lbl in target_labels:
+                return js.get_axis(a)
+    return 0.0
+
+
+def run_visualizer():
+    pygame.init()
+    pygame.joystick.init()
+
+    count = pygame.joystick.get_count()
+    if count == 0:
+        print("No joystick/HID devices found for visualizer.")
+        return
+
+    joysticks = []
+    for i in range(count):
+        js = pygame.joystick.Joystick(i)
+        js.init()
+        joysticks.append(js)
+
+    screen_w, screen_h = 1100, 750
+    screen = pygame.display.set_mode((screen_w, screen_h))
+    pygame.display.set_caption("Flight Navigation Visualizer")
+
+    clock = pygame.time.Clock()
+    font = pygame.font.SysFont("Arial", 22)
+    small_font = pygame.font.SysFont("Arial", 16)
+
+    # Starting position
+    x = screen_w // 2
+    y = screen_h // 2
+
+    # Trail of visited points
+    trail = []
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        pygame.event.pump()
+
+        # Read main controls from your existing joystick labeling system
+        roll = get_axis_value_by_label(joysticks, ["aileron (roll)"])
+        pitch = get_axis_value_by_label(joysticks, ["elevator (pitch)"])
+        rudder = get_axis_value_by_label(joysticks, ["rudder"])
+        throttle = get_axis_value_by_label(
+            joysticks,
+            ["throttle 1", "throttle 2"]
+        )
+
+        # Deadzones
+        if abs(roll) < 0.05:
+            roll = 0.0
+        if abs(pitch) < 0.05:
+            pitch = 0.0
+        if abs(rudder) < 0.05:
+            rudder = 0.0
+        if abs(throttle) < 0.05:
+            throttle = 0.0
+
+        # Convert throttle to movement speed
+        # Many throttles rest around -1 to +1, so normalize to 0..1
+        speed_factor = (throttle + 1) / 2.0
+        speed = 2 + speed_factor * 10
+
+        # Move visual marker
+        x += roll * speed * 2.5
+        y += pitch * speed * 2.5
+
+        # Rudder adds slight horizontal bias
+        x += rudder * speed * 1.2
+
+        # Clamp to screen
+        x = max(40, min(screen_w - 40, x))
+        y = max(40, min(screen_h - 40, y))
+
+        # Save trail
+        trail.append((int(x), int(y)))
+        if len(trail) > 800:
+            trail.pop(0)
+
+        # Draw
+        screen.fill((8, 10, 18))
+
+        # Grid
+        grid_spacing = 50
+        for gx in range(0, screen_w, grid_spacing):
+            pygame.draw.line(screen, (30, 38, 60), (gx, 0), (gx, screen_h), 1)
+        for gy in range(0, screen_h, grid_spacing):
+            pygame.draw.line(screen, (30, 38, 60), (0, gy), (screen_w, gy), 1)
+
+        # Center crosshair
+        pygame.draw.line(screen, (70, 90, 130), (screen_w // 2, 0), (screen_w // 2, screen_h), 1)
+        pygame.draw.line(screen, (70, 90, 130), (0, screen_h // 2), (screen_w, screen_h // 2), 1)
+
+        # Draw trail
+        if len(trail) > 1:
+            pygame.draw.lines(screen, (100, 180, 255), False, trail, 2)
+
+        # Marker size reacts to throttle
+        marker_radius = int(10 + speed_factor * 18)
+
+        # Glow
+        pygame.draw.circle(screen, (60, 120, 255), (int(x), int(y)), marker_radius + 12, 2)
+        pygame.draw.circle(screen, (255, 100, 100), (int(x), int(y)), marker_radius)
+        pygame.draw.circle(screen, (255, 255, 255), (int(x), int(y)), marker_radius + 4, 2)
+
+        # Heading line based on roll + pitch
+        angle = math.atan2(pitch, roll if roll != 0 else 0.0001)
+        line_len = 45
+        hx = int(x + math.cos(angle) * line_len)
+        hy = int(y + math.sin(angle) * line_len)
+        pygame.draw.line(screen, (255, 230, 120), (int(x), int(y)), (hx, hy), 3)
+
+        # HUD panel
+        panel = pygame.Rect(800, 30, 270, 220)
+        pygame.draw.rect(screen, (20, 25, 40), panel, border_radius=12)
+        pygame.draw.rect(screen, (90, 110, 150), panel, 2, border_radius=12)
+
+        lines = [
+            "Navigation Visual",
+            f"Roll:      {roll:+.3f}",
+            f"Pitch:     {pitch:+.3f}",
+            f"Rudder:    {rudder:+.3f}",
+            f"Throttle:  {throttle:+.3f}",
+            f"Speed:     {speed:.2f}",
+            f"X:         {x:.1f}",
+            f"Y:         {y:.1f}",
+        ]
+
+        ty = 45
+        for i, text in enumerate(lines):
+            surf = font.render(text, True, (235, 235, 235))
+            screen.blit(surf, (820, ty))
+            ty += 26
+
+        # Device list
+        device_title = small_font.render("Connected devices:", True, (180, 200, 255))
+        screen.blit(device_title, (30, 20))
+
+        dy = 45
+        for i, js in enumerate(joysticks):
+            info = f"[{i}] {js.get_name()}"
+            surf = small_font.render(info, True, (180, 180, 180))
+            screen.blit(surf, (30, dy))
+            dy += 18
+
+        # Instructions
+        info_lines = [
+            "Controls:",
+            "Roll = left / right",
+            "Pitch = up / down",
+            "Rudder = side bias",
+            "Throttle = speed / marker size",
+            "Close window to quit"
+        ]
+        iy = 280
+        for text in info_lines:
+            surf = small_font.render(text, True, (220, 220, 220))
+            screen.blit(surf, (820, iy))
+            iy += 22
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    for js in joysticks:
+        js.quit()
+    pygame.quit()
 
 if __name__ == "__main__":
-    main()
+    mode = "visual"   # change to "reader" if needed
+
+    if mode == "reader":
+        main()
+    elif mode == "visual":
+        run_visualizer()
