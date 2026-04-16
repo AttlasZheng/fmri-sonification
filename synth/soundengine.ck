@@ -19,7 +19,7 @@
     "audio 1/a/low/supported a low.wav"
 ] @=> string sampleFiles[];
 
-3 => int currentSampleIndex;
+0 => int currentSampleIndex;
 sampleFiles[currentSampleIndex] => string filename;
 
 // OSC port
@@ -273,6 +273,7 @@ for (0 => int i; i < NUM_GRAINS; i++)
 
 spork ~ intervalListener();
 spork ~ attackListener();
+spork ~ sampleIndexListener();
 
 
 // =========================
