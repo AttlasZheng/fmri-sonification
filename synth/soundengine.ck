@@ -8,7 +8,43 @@
     "audio 1/a/mid/supported a mid.wav",
     "audio 1/a/low/Raspy a low.wav",
     "audio 1/a/low/breathy a low.wav",
-    "audio 1/a/low/Supported a low.wav"
+    "audio 1/a/low/Supported a low.wav",
+    "audio 1/e/high/raspy e high.wav",
+    "audio 1/e/high/breathy e high.wav",
+    "audio 1/e/high/supported e high.wav",
+    "audio 1/e/mid/raspy e mid.wav",
+    "audio 1/e/mid/breathy e mid.wav",
+    "audio 1/e/mid/supported e mid.wav",
+    "audio 1/e/low/raspy e low.wav",
+    "audio 1/e/low/breathy e low.wav",
+    "audio 1/e/low/supported e low.wav",
+    "audio 1/i/high/raspy i high.wav",
+    "audio 1/i/high/breathy i high.wav",
+    "audio 1/i/high/supported i high.wav",
+    "audio 1/i/mid/raspy i mid.wav",
+    "audio 1/i/mid/breathy i mid.wav",
+    "audio 1/i/mid/supported i mid.wav",
+    "audio 1/i/low/raspy i low.wav",
+    "audio 1/i/low/breathy i low.wav",
+    "audio 1/i/low/supported i low.wav",
+    "audio 1/o/high/raspy o high.wav",
+    "audio 1/o/high/breathy o high.wav",
+    "audio 1/o/high/supported o high.wav",
+    "audio 1/o/mid/raspy o mid.wav",
+    "audio 1/o/mid/breathy o mid.wav",
+    "audio 1/o/mid/supported o mid.wav",
+    "audio 1/o/low/raspy o low.wav",
+    "audio 1/o/low/breathy o low.wav",
+    "audio 1/o/low/supported o low.wav",
+    "audio 1/u/high/raspy u high.wav",
+    "audio 1/u/high/breathy u high.wav",
+    "audio 1/u/high/supported u high.wav",
+    "audio 1/u/mid/raspy u mid.wav",
+    "audio 1/u/mid/breathy u mid.wav",
+    "audio 1/u/mid/supported u mid.wav",
+    "audio 1/u/low/raspy u low.wav",
+    "audio 1/u/low/breathy u low.wav",
+    "audio 1/u/low/supported u low.wav"
 ] @=> string sampleFiles[];
 
 0 => int sampleIndex;
@@ -223,6 +259,10 @@ fun void sampleIndexListener()
 fun void grainVoice(int index)
 {
     SndBuf g => ADSR env => dac;
+    SndBuf g1 => env => dac;
+    SndBuf g2 => env => dac;
+    SndBuf g3 => env => dac;
+    SndBuf g4 => env => dac;
 
     -1 => int localSampleIndex;
     -1 => int localSampleVersion;
@@ -240,8 +280,12 @@ fun void grainVoice(int index)
             sampleFiles[sampleIndex] => g.read;
             sampleIndex => localSampleIndex;
             sampleVersion => localSampleVersion;
+            sampleFiles[sampleIndex + 9] => g1.read;
+            sampleFiles[sampleIndex + 18] => g2.read;
+            sampleFiles[sampleIndex + 27] => g3.read;
+            sampleFiles[sampleIndex + 36] => g4.read;
 
-            if (g.samples() <= 0)
+            if (g4.samples() <= 0)
             {
                 <<< "ERROR: failed to load sample", sampleIndex >>>;
                 100::ms => now;
@@ -250,10 +294,18 @@ fun void grainVoice(int index)
         }
 
         clamp01(grainVolumes[index]) => g.gain;
+        clamp01(grainVolumes[index]) => g1.gain;
+        clamp01(grainVolumes[index]) => g2.gain;
+        clamp01(grainVolumes[index]) => g3.gain;
+        clamp01(grainVolumes[index]) => g4.gain;
 
         if (g.samples() > 0)
         {
             Math.random2(0, g.samples() - 1) => g.pos;
+            Math.random2(0, g.samples() - 1) => g1.pos;
+            Math.random2(0, g.samples() - 1) => g2.pos;
+            Math.random2(0, g.samples() - 1) => g3.pos;
+            Math.random2(0, g.samples() - 1) => g4.pos;
         }
 
         grainAttack => dur attack;
